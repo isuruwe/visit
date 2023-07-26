@@ -24,7 +24,7 @@
     <link href="lib/animate/animate.min.css" rel="stylesheet">
     <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
     <link href="lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <!-- Customized Bootstrap Stylesheet -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
    
@@ -41,13 +41,107 @@
           margin-left: 10px;
           border-radius: 5px;
         }
+        .messages-content {
+  height: 400px; /* Set the desired height for the container */
+  overflow-y: auto;
+}
+.messages{
+  height: 400px; /* Set the desired height for the container */
+ 
+}
+.chat-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: #fff;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+
+
+}
+
+/* Style the chat icon icon */
+.chat-icon i {
+  font-size: 24px;
+}
+
+/* Style the close icon in the header */
+.close-icon {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+}
+.chat {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  right: 15px;
+  border: 3px solid #f1f1f1;
+
+  
+  bottom: 20px; /* Adjust the distance from the bottom of the screen as needed */
+  right: 20px; /* Adjust the distance from the right of the screen as needed */
+  width: 300px; /* Adjust the width of the chat box as needed */
+
+  z-index: 9999; /* Ensure the chat box appears above other elements */
+}
+.messages-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  display: flex;
+ 
+  margin-bottom: 8px; /* Adjust the spacing between messages as needed */
+}
+
+.avatar {
+  flex-shrink: 0;
+  margin-right: 8px; /* Adjust the spacing between the avatar and message content */
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-text {
+    font-size: 14px;
+    max-width: 200px; /* Adjust the maximum width of the message-text div to 40 pixels */
+  overflow-wrap: break-word;
+}
+
+.message-image {
+  max-width: 200px; /* Adjust the maximum width of the displayed image */
+  max-height: 200px; /* Adjust the maximum height of the displayed image */
+  margin-top: 8px; /* Adjust the spacing between text and image */
+}
+.chat-icon img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover; /* Maintain aspect ratio and cover the container */
+  border-radius: 50%; /* Set the border-radius to 50% to make the image round */
+}
       </style>
 <script type="module">
 //import { initializeApp } from '/node_modules/firebase/app';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js'
 import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-analytics.js'
-import { getFirestore, collection, doc,getDocs , addDoc, serverTimestamp, setDoc,query,where, getDoc, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js'
+import { onSnapshot,getFirestore, collection, doc,getDocs , addDoc, serverTimestamp, setDoc,query,where, getDoc, updateDoc, arrayUnion,orderBy } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js'
 import {getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js'
+//import { getMessaging,getToken} from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-messaging.js';
+
+
+
+
 // TODO: Replace the following with your app's Firebase project configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBcP35wEmyYJrsN-HsvGJJ_SK_zBg_Buec",
@@ -74,8 +168,34 @@ const auth = getAuth(app);
 var user=null;
 var userDocRef =null;
 var roomDocRef=null;
+var messagesCollectionRef=null;
+var  roomCollectionRef =null;
+//const messaging = getMessaging(app);
 
-await signInWithPopup(auth, provider)
+
+
+
+
+document.getElementById('m1').addEventListener('click', openForm);
+document.getElementById('s1').addEventListener('click', openForm);
+document.getElementById('c1').addEventListener('click', closeForm);
+
+
+// Add the public key generated from the console here.
+
+async function createuser(){
+debugger;
+    user = auth.currentUser;
+  debugger;
+  if (user) {
+    console.log('User is already logged in:', user.email);
+    // You can choose to do something else here if the user is already logged in
+    // or simply return and not proceed with the rest of the function.
+   
+  }
+  else{
+
+    await signInWithPopup(auth, provider)
   .then((result) => {
     // This gives you a Google Access Token. You can use it to access the Google API.
     const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -90,7 +210,7 @@ await signInWithPopup(auth, provider)
     // ...
   }).catch((error) => {
     // Handle Errors here.
-    debugger;
+   // debugger;
     const errorCode = error.code;
     const errorMessage = error.message;
     // The email of the user's account used.
@@ -99,11 +219,15 @@ await signInWithPopup(auth, provider)
     const credential = GoogleAuthProvider.credentialFromError(error);
     // ...
   });
-debugger;
+
+  }
+
+
+//debugger;
 const userCollectionRef = collection(firestore, 'users');
 
 // Create a reference to the room collection
-const roomCollectionRef = collection(firestore, 'rooms');
+ roomCollectionRef = collection(firestore, 'rooms');
 
 //const roomDocRef = doc(roomCollectionRef);
 
@@ -142,7 +266,7 @@ if (!userDocRef) {
     
   // Save the user object to the user collection
    userDocRef = await addDoc(userCollectionRef, userObject);
-   debugger;
+   //debugger;
   console.log('User data successfully saved to Firestore:', userDocRef.id);
 // Create a room object
 createroom();
@@ -152,7 +276,7 @@ createroom();
   console.log('Email already exists in the Firestore collection.');
   createroom();
 }
-
+}
 async function createroom(){
 const roomObject = {
   createdAt: new Date('July 16, 2023 15:38:44 UTC+5:30'),
@@ -163,7 +287,7 @@ const roomObject = {
   updatedAt: new Date('July 16, 2023 15:40:25 UTC+5:30'),
   userIds: [
     // Assuming this is the newly generated document ID for the user
-    'RMSAlssQnKPpeVLoBGgXLBVBg4H3',
+    'PwopvMZA2FPWsYujPfjNr7ycbwk2',
     userDocRef.id // Replace with the other user ID
   ]
 };
@@ -183,12 +307,38 @@ async function checkRoomExistsAndGetRef(userIds) {
 
 // Check if the room exists
  roomDocRef = await checkRoomExistsAndGetRef(roomObject.userIds);
-debugger;
+//debugger;
 if (!roomDocRef) {
+    $('.messages-content').html('');
   // Save the room object to the room collection
   roomDocRef = await addDoc(roomCollectionRef, roomObject);
+   messagesCollectionRef = collection(roomDocRef, 'messages');
+   const orderedMessagesQuery = query(messagesCollectionRef, orderBy('createdAt'));
+   const unsubscribe = onSnapshot(orderedMessagesQuery, (querySnapshot) => {
+  // For each new added message
+  querySnapshot.docChanges().forEach((change) => {
+    if (change.type === 'added') {
+      // Handle the newly added message
+      handleNewMessage(change.doc);
+    }
+  });
+});
   console.log('Room data successfully saved to Firestore:', roomDocRef.id);
 } else {
+
+debugger;
+$('.messages-content').html('');
+    messagesCollectionRef = collection(roomDocRef, 'messages');
+    const orderedMessagesQuery = query(messagesCollectionRef, orderBy('createdAt'));
+   const unsubscribe = onSnapshot(orderedMessagesQuery, (querySnapshot) => {
+  // For each new added message
+  querySnapshot.docChanges().forEach((change) => {
+    if (change.type === 'added') {
+      // Handle the newly added message
+      handleNewMessage(change.doc);
+    }
+  });
+});
   console.log('Room with the same user IDs already exists in the Firestore collection. Room document reference:', roomDocRef.id);
 }
 
@@ -196,11 +346,13 @@ if (!roomDocRef) {
 
 
 
- document.getElementById('f1').addEventListener('click', f1);
+ //document.getElementById('f1').addEventListener('click', f1);
  async function f1(){
 
+    sendNotification('Visit Lanka- '+user.displayName,$('.message-input').val());
+    
 // Create a reference to the messages collection inside the room document
-const messagesCollectionRef = collection(roomDocRef, 'messages');
+ messagesCollectionRef = collection(roomDocRef, 'messages');
 
 
   
@@ -215,66 +367,200 @@ const messageObject = {
   type: 'text',
   updatedAt: serverTimestamp()
 };
-
+debugger;
 // Save the message object to the messages collection
 const messageDocRef = await addDoc(messagesCollectionRef, messageObject);
-$('<div class="message message-personal"><figure class="avatar"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" /></figure><div id="message-' + messageDocRef.id + '">' +$('.message-input').val() + '<button class="btn-delete" data-id="' + messageDocRef.id + '" onclick="deleteMessage(this);">Delete</button></div></div>').appendTo($('.mCSB_container')).addClass('new');
+// const messageHtml = $('<div class="message message-personal"><figure class="avatar"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" /></figure><div id="message-' + messageDocRef.id + '">' + $('.message-input').val() + '</div></div>');
+
+// // Append the messageHtml to the .messages-content div
+// $('.messages-content').append(messageHtml);
+
+// // Add the 'new' class to the newly added message for any animations/effects
+// messageHtml.addClass('new');
+
+// let src = 'http://codeskulptor-demos.commondatastorage.googleapis.com/descent/gotitem.mp3';
+// let audio = new Audio(src);
+// audio.play();
+
 console.log('Data successfully saved to Firestore.');
 $('.message-input').val(null);
 }
 
-(function ($) {
-//   function insertMessage() {
-//     msg = $('.message-input').val();
-//     if ($.trim(msg) == '') {
-//       return false;
-//     }
+/////////////
+// function handleNewMessage(snapshot) {
+//     debugger;
+//   const message = snapshot.data();
+
+//   // Add your logic here to handle the newly received message
+//   const currentUserID = userDocRef.id;
+
+// // Check if the message is from the current user or other user
+// const isFromCurrentUser = message.authorId === currentUserID;
+
+// // Create the message HTML based on the author
+// // const messageHtml = $(`
+// //   <div class="message ${isFromCurrentUser ? 'message-personal' : 'message-other'}">
+// //     <figure class="avatar">
+// //       <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" />
+// //     </figure>
+// //     <div id="message-${snapshot.id}">${message.text}</div>
+// //   </div>
+// // `);
+// const messageHtml = $(`
+//     <div class="message ${isFromCurrentUser ? 'message-personal' : ''}">
+//       <div class="avatar">
+//         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" />
+//       </div>
+//       <div class="message-text" id="message-${snapshot.id}">${message.text}</div>
+//     </div>
+//   `);
+
+
+
+// // Append the messageHtml to the .messages-content div
+// $('.messages-content').append(messageHtml);
+// messageHtml.addClass('new');
+// scrollToBottom();
+//   let src = 'http://codeskulptor-demos.commondatastorage.googleapis.com/descent/gotitem.mp3';
+// let audio = new Audio(src);
+// audio.play();
+
+// }
+
+function showImagePopup(imageUrl) {
+  // Open a new window to display the image
+  const popupWindow = window.open(imageUrl, '_blank', 'width=800,height=600');
+  if (!popupWindow || popupWindow.closed || typeof popupWindow.closed === 'undefined') {
+    // If the popup is blocked, fall back to opening the image in a new tab
+    window.open(imageUrl, '_blank');
+  }
+}
+
+function sendNotification(tit,bod) {
+              
+                //var url = 'https://fcm.googleapis.com//v1/projects/visitlanka-1bae8/messages:send';
+                var stateid = 'cB1O_kmHQiS8LTDsg165Mc:APA91bFZLTErsNxjukkwcpP_Gk49i1hPyb0l6llgZbqKgqn1Sfm-CucMfLU_FxGqIrBuTGwjUjMJEMdVHZQiu1zOL1oOf0pbWKEdRxg_TKdvGfVw08gZXlYygBC7V9lxAz7crhK4uCeQ'; // Replace this with the actual registration ID
+
+                var projectId = 'visitlanka-1bae8';
+                var url1 = 'https://isuruwe.pythonanywhere.com/get-fb/?title='+tit+'&body='+bod+'&device_token='+stateid;
+
+            
+
+              
+
+                $.ajax({
+                    url: url1,
+                    type: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                       
+                    },
+                    
+                    success: function(result) {
+                        console.log(result);
+                        // Handle the success response here
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(error);
+                        // Handle the error response here
+                    }
+                });
+
+
+
+              
+            }
+
+
+
+function handleNewMessage(snapshot) {
+  const message = snapshot.data();
+  const currentUserID = userDocRef.id;
+
+  // Check if the message is from the current user or other user
+  const isFromCurrentUser = message.authorId === currentUserID;
+
+  // Create the message HTML based on the author
   
-//     sendMessage();
-//   }
-// })(jQuery);
 
-$('.message-submit').click(function() {
-  insertMessage();
-});
+  // Append the messageHtml to the .messages-content div
+  const messageContainer = $('.messages-content');
+ 
+ 
+  // Check if the message contains an image URL
+  if (message.uri) {
+    const imageHtml = `
+      <div class="message-image ${isFromCurrentUser ? 'message-personal' : ''}">
+        <img class="message-image" src="${message.uri}" id="d1"  onClick="window.open('${message.uri}', '_blank');" />
+      </div>
+    `;
 
+    // Append the imageHtml to the .messages-content div
+    messageContainer.append(imageHtml);
+   // document.getElementById('d1').addEventListener('click', showImagePopup(message.uri));
+  }
+  else{
+    const messageHtml = `
+    <div class="message ${isFromCurrentUser ? 'message-personal' : ''}">
+      <div class="avatar">
+
+        ${isFromCurrentUser ? '<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" />' : '<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" />'}
+        
+      </div>
+      <div class="message-text" id="message-${snapshot.id}">${message.text}</div>
+    </div>
+  `;
+  messageContainer.append(messageHtml);
+  }
+
+  // Scroll to the bottom of the container after adding the new message
+  scrollToBottom();
+
+  // Play the audio notification
+  let src = 'http://codeskulptor-demos.commondatastorage.googleapis.com/descent/gotitem.mp3';
+  let audio = new Audio(src);
+  audio.play();
+}
+// Subscribe to the messages collection changes
+
+function scrollToBottom() {
+  const messagesContainer = document.querySelector('.messages-content');
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Function to stop listening for updates (unsubscribe) when needed
+function stopListening() {
+  unsubscribe();
+}
+
+/////////recieve
+
+
+const sendButton = document.getElementById('sendButton');
+
+// Add an onclick event listener to the button
+sendButton.addEventListener('click', sendMessage);
+
+// Define the function to be executed on button click
+function sendMessage(event) {
+    debugger;
+    f1();
+  // Prevent the default form submission behavior (if the button is inside a form)
+  event.preventDefault();
+
+  // Your code to handle the "Send" button click event
+  // For example, you can perform an action when the button is clicked
+  console.log('Send button clicked!');
+  // Add your code here to handle the message sending logic
+}
 $(window).on('keydown', function(e) {
   if (e.which == 13) {
     f1();
     return false;
   }
 });
-// var $messages = $('.messages-content'),
-// d, h, m,
-// i = 0;
 
-// var myName = "";
 
-// $(window).on("load", function() {
-
-// myName = prompt("Enter your name");
-// $messages.mCustomScrollbar();
-
-// database.ref("messages").on("child_added", function (snapshot) {
-// if (snapshot.val().sender == myName) {
-//   $('<div class="message message-personal"><figure class="avatar"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" /></figure><div id="message-' + snapshot.key + '">' + snapshot.val().message + '<button class="btn-delete" data-id="' + snapshot.key + '" onclick="deleteMessage(this);">Delete</button></div></div>').appendTo($('.mCSB_container')).addClass('new');
-//   $('.message-input').val(null);
-// } else {
-//   $('<div class="message new"><figure class="avatar"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpdX6tPX96Zk00S47LcCYAdoFK8INeCElPeJrVDrh8phAGqUZP_g" /></figure><div id="message-' + snapshot.key + '">' + snapshot.val().sender + ': ' + snapshot.val().message + '</div></div>').appendTo($('.mCSB_container')).addClass('new');
-// }
-
-// setDate();
-// updateScrollbar();
-// });
-
- });
-
-function updateScrollbar() {
-$messages.mCustomScrollbar("update").mCustomScrollbar('scrollTo', 'bottom', {
-scrollInertia: 10,
-timeout: 0
-});
-}
 
 function setDate(){
 d = new Date()
@@ -283,6 +569,40 @@ m = d.getMinutes();
 $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.message:last'));
 }
 }
+
+$(document).ready(function () {
+
+
+
+  $('.chat-icon').on('click', function () {
+    $('.chat-container').show();
+  });
+
+  // Hide the chat window when the close icon is clicked
+  $('.close-icon').on('click', function () {
+    $('.chat-container').hide();
+  });
+
+  // Make the chat window draggable
+  $('.chat').draggable({
+    
+    containment: 'body',
+  });
+
+
+});
+
+function openForm() {
+  document.getElementById("myForm").style.display = "block";
+  scrollToBottom();
+  debugger;
+  createuser();
+}
+
+function closeForm() {
+  document.getElementById("myForm").style.display = "none";
+}
+
 </script>
 </head>
 
@@ -294,10 +614,15 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
         </div>
     </div>
     <!-- Spinner End -->
-    <div class="chat">
+    <div class="chat-icon" class="open-button" id="m1" >
+        
+            <img width="40px" src="https://p7.hiclipart.com/preview/397/178/392/computer-icons-message-chat-icon.jpg" />
+      </div>
+
+    <div class="chat" id="myForm">
         <div class="chat-title">
-          <h1>Chat Room</h1>
-          <h2>Firebase</h2>
+          <h1 style="color: white;">Live Chat <span class="close-icon" id="c1" style="color: white;">&times;</span></h1>
+          
           <figure class="avatar">
             <img src="https://p7.hiclipart.com/preview/349/273/275/livechat-online-chat-computer-icons-chat-room-web-chat-others.jpg" /></figure>
         </div>
@@ -306,7 +631,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
         </div>
         <div class="message-box">
           <textarea type="text" class="message-input" id="message" placeholder="Type message..."></textarea>
-          <button type="submit" class="message-submit">Send</button>
+          <button type="submit" class="message-submit" id="sendButton">Send</button>
         </div>
       
       </div>
@@ -331,7 +656,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                     <small><a href="tel:+94719096785">+94719096785</a></small>
                 </div>
                 <div class="h-100 d-inline-flex align-items-center">
-                    <a class="btn btn-sm-square bg-white text-primary me-1" href=""><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-sm-square bg-white text-primary me-1" href="https://www.facebook.com/profile.php?id=100069096351893"><i class="fab fa-facebook-f"></i></a>
                     <a class="btn btn-sm-square bg-white text-primary me-1" href=""><i class="fab fa-twitter"></i></a>
                     <a class="btn btn-sm-square bg-white text-primary me-1" href=""><i class="fab fa-linkedin-in"></i></a>
                     <a class="btn btn-sm-square bg-white text-primary me-0" href=""><i class="fab fa-instagram"></i></a>
@@ -366,7 +691,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                 </div> -->
                 <a href="#cont1" class="nav-item nav-link">Contact</a>
             </div>
-            <a id="f1" class="btn btn-primary py-4 px-lg-5 d-none d-lg-block">Get A Quote<i class="fa fa-arrow-right ms-3"></i></a>
+            <a id="s1" class="btn btn-primary py-4 px-lg-5 d-none d-lg-block">Get A Quote<i class="fa fa-arrow-right ms-3"></i></a>
         </div>
     </nav>
     <!-- Navbar End -->
@@ -385,7 +710,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h5 class="text-white text-uppercase mb-3 animated slideInDown">// Budget Cars//</h5>
                                     <h7 class="display-6 text-white mb-4 pb-4 animated slideInDown">Our budget cars are ideal for anyone who is looking forward to travel at the most affordable rates. You can get Tata Nano, Maruti, Alto, Micro Panda, Renault Kwid, Viva Elite, Hyundai Eon, and Datson RediGo cars for hire.</h7>
-                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-chat ms-3"></i></a>
+                                    <a  id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-chat ms-3"></i></a>
                                 </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/nano.png" alt="">
@@ -402,7 +727,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h5 class="text-white text-uppercase mb-3 animated slideInDown">// Mini Cars//</h5>
                                     <h7 class="display-6 text-white mb-4 pb-3 animated slideInDown">If you want some more comfort, you may take a look at our mini cars. They include Wagon R, Hustler, Spacia, N Box.</h7>
-                            <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">to get the best deal chat with agent<i class="fa fa-arrow-right ms-3"></i></a>
+                            <a href="" id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">to get the best deal chat with agent<i class="fa fa-arrow-right ms-3"></i></a>
                                 </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/wag.png" alt="">
@@ -419,7 +744,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h5 class="text-white text-uppercase mb-3 animated slideInDown">// Sedan Cars//</h5>
                                     <h7 class="display-6 text-white mb-4 pb-3 animated slideInDown">We offer an exclusive lineup of sedan cars, including Toyota Axio, Toyota Prius, Honda Fit Shuttle, Honda Grace, and Toyota Allion.</h7>
-                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">to get the best deal chat with agent<i class="fa fa-chat ms-3"></i></a>
+                                    <a href="" id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">to get the best deal chat with agent<i class="fa fa-chat ms-3"></i></a>
                               </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/carousel-2.png" alt="">
@@ -436,7 +761,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h5 class="text-white text-uppercase mb-3 animated slideInDown">// Luxury Cars//</h5>
                                     <h7 class="display-6 text-white mb-4 pb-3 animated slideInDown">If you are looking for a crossover SUV, we got you covered as well. You can hire a Honda Vezel, Toyota CH-R, or a Honda CR-V.</h7>
-                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">to get the best deal chat with agent<i class="fa fa-chat ms-3"></i></a>
+                                    <a href="" id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">to get the best deal chat with agent<i class="fa fa-chat ms-3"></i></a>
                              </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/carousel-1.png" alt="">
@@ -453,7 +778,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h6 class="text-white text-uppercase mb-3 animated slideInDown">// Van //</h6>
                                     <h1 class="display-6 text-white mb-4 pb-3 animated slideInDown">Our fleet offers budget-friendly 6-seater vans like Suzuki Every and Daihatsu Hijet, as well as high roof options such as Toyota Dolphine and Toyota Caravan, catering to those seeking extra space and comfort with AC.</h1>
-                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-arrow-right ms-3"></i></a>
+                                    <a href="" id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-arrow-right ms-3"></i></a>
                                 </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/van.png" alt="">
@@ -470,7 +795,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h6 class="text-white text-uppercase mb-3 animated slideInDown">// KDH Van //</h6>
                                     <h1 class="display-6 text-white mb-4 pb-3 animated slideInDown">Our KDH fleet includes Flatroof vehicles accommodating up to 10 passengers and Highroof vans offering extra space and comfortable rides for short-distance and long-distance travels.</h1>
-                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-arrow-right ms-3"></i></a>
+                                    <a href="" id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-arrow-right ms-3"></i></a>
                                 </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/kdh.png" alt="">
@@ -487,7 +812,7 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
                                 <div class="col-10 col-lg-7 text-center text-lg-start">
                                     <h6 class="text-white text-uppercase mb-3 animated slideInDown">// AC Bus //</h6>
                                     <h1 class="display-6 text-white mb-4 pb-3 animated slideInDown">We got you covered with your bus hire needs in Sri Lanka as well. You can book one of the many options of buses for your travel needs with a group.</h1>
-                                    <a href="" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-arrow-right ms-3"></i></a>
+                                    <a href="" id="s1" class="btn btn-primary py-3 px-5 animated slideInDown">chat with agent to get the best deal<i class="fa fa-arrow-right ms-3"></i></a>
                                 </div>
                                 <div class="col-lg-5 d-none d-lg-flex animated zoomIn">
                                     <img class="img-fluid" src="img/bus.png" alt="">
@@ -999,6 +1324,8 @@ $('<div class="timestamp">' + d.getHours() + ':' + m + '</div>').appendTo($('.me
 
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
+<script src="https://code.jquery.com/jquery-migrate-1.4.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="lib/wow/wow.min.js"></script>
     <script src="lib/easing/easing.min.js"></script>
